@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>saas-llm • Agent Studio</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.09);
+        --stroke: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.68);
+        --muted2: rgba(255, 255, 255, 0.5);
+        --brand: #7c5cff;
+        --brand2: #22c55e;
+        --danger: #ef4444;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        --radius: 16px;
+        --radius2: 12px;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica,
+          Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        color: var(--text);
+        background:
+          radial-gradient(1200px 800px at 10% 5%, rgba(124, 92, 255, 0.28), transparent 60%),
+          radial-gradient(900px 700px at 90% 10%, rgba(34, 197, 94, 0.18), transparent 60%),
+          radial-gradient(1000px 800px at 50% 100%, rgba(56, 189, 248, 0.14), transparent 55%),
+          linear-gradient(180deg, rgba(11, 18, 32, 1), rgba(11, 18, 32, 1));
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 60px;
+      }
+
+      .topbar {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(124, 92, 255, 1), rgba(34, 197, 94, 1));
+        box-shadow: 0 12px 30px rgba(124, 92, 255, 0.24);
+      }
+      .title {
+        display: grid;
+        line-height: 1.1;
+      }
+      .title strong {
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+      .title span {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .btn {
+        border: 1px solid var(--stroke);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.05s ease, background 0.2s ease, border-color 0.2s ease;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        font-weight: 600;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn.primary {
+        background: linear-gradient(135deg, rgba(124, 92, 255, 0.95), rgba(124, 92, 255, 0.65));
+        border-color: rgba(124, 92, 255, 0.6);
+      }
+      .btn.good {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(34, 197, 94, 0.65));
+        border-color: rgba(34, 197, 94, 0.6);
+      }
+      .btn.ghost {
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.04));
+        border: 1px solid var(--stroke);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .cardHeader {
+        padding: 16px 16px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .cardHeader h2 {
+        margin: 0;
+        font-size: 15px;
+        letter-spacing: 0.2px;
+      }
+      .cardHeader p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .cardBody {
+        padding: 16px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      @media (max-width: 560px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      label {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.18);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 10px 12px;
+        outline: none;
+        transition: border-color 0.2s ease, background 0.2s ease;
+      }
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: rgba(124, 92, 255, 0.7);
+        background: rgba(0, 0, 0, 0.22);
+      }
+
+      .helper {
+        font-size: 12px;
+        color: var(--muted2);
+        margin-top: 8px;
+        line-height: 1.35;
+      }
+      .mono {
+        font-family: var(--mono);
+      }
+
+      .pill {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(34, 197, 94, 0.9);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+      }
+      .dot.bad {
+        background: rgba(239, 68, 68, 0.95);
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 14px;
+      }
+      @media (max-width: 980px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .result {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.2);
+        padding: 12px;
+        min-height: 160px;
+        white-space: pre-wrap;
+        line-height: 1.45;
+      }
+
+      .error {
+        border-color: rgba(239, 68, 68, 0.45);
+      }
+
+      .footerNote {
+        margin-top: 18px;
+        color: var(--muted2);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      a {
+        color: rgba(124, 92, 255, 0.92);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div class="title">
+            <strong>Agent Studio</strong>
+            <span>Teste rápido: criar agentes + playground público</span>
+          </div>
+        </div>
+        <div class="actions">
+          <span id="apiStatus" class="pill"><span class="dot" id="apiDot"></span>API</span>
+          <button class="btn ghost" id="btnOpenDocs" type="button">Abrir /docs</button>
+          <button class="btn" id="btnRefreshAgents" type="button">Atualizar agentes</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section class="card">
+          <header class="cardHeader">
+            <div>
+              <h2>Criar agente</h2>
+              <p>Preencha tudo, ou deixe para gerar automaticamente</p>
+            </div>
+            <button class="btn good" id="btnCreate" type="button">Criar</button>
+          </header>
+          <div class="cardBody">
+            <div class="row">
+              <div>
+                <label for="agentName">Nome</label>
+                <input id="agentName" placeholder="Ex: Suporte da ACME" value="Agente de teste" />
+              </div>
+              <div>
+                <label for="agentSlug">Slug</label>
+                <input id="agentSlug" class="mono" placeholder="Ex: suporte-acme (opcional)" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="agentModel">Modelo (OpenAI)</label>
+                <select id="agentModel">
+                  <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
+                  <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                  <option value="gpt-4.1">gpt-4.1</option>
+                  <option value="gpt-4o">gpt-4o</option>
+                </select>
+              </div>
+              <div>
+                <label for="agentApiKey">API Key do agente (X-API-Key)</label>
+                <input id="agentApiKey" class="mono" placeholder="Se vazio, gera automaticamente" />
+              </div>
+            </div>
+            <div>
+              <label for="agentPrompt">Prompt (opcional)</label>
+              <textarea
+                id="agentPrompt"
+                placeholder="Ex: Você é um assistente que responde apenas com base nos documentos enviados."
+              ></textarea>
+            </div>
+            <div class="row" style="margin-top: 12px">
+              <div style="grid-column: 1 / -1">
+                <label for="agentFiles">Arquivos para RAG (PDF/TXT) — upload após criar</label>
+                <input id="agentFiles" type="file" multiple accept=".pdf,.txt" />
+                <div class="helper">
+                  Os arquivos serão enviados para <span class="mono">/agents/{id}/documents</span> e marcados como
+                  <span class="mono">pending</span> (o processamento RAG virá depois).
+                </div>
+              </div>
+            </div>
+
+            <div class="helper">
+              Dica: após criar, selecione o agente no Playground para copiar o <span class="mono">slug</span> e o
+              <span class="mono">X-API-Key</span>.
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="cardHeader">
+            <div>
+              <h2>Agentes criados</h2>
+              <p>Lista atual do banco</p>
+            </div>
+            <span class="pill mono" title="Base URL atual">base: <span id="baseUrl"></span></span>
+          </header>
+          <div class="cardBody">
+            <div>
+              <label for="agentsSelect">Selecionar agente</label>
+              <select id="agentsSelect"></select>
+            </div>
+
+            <div style="margin-top: 12px" class="split">
+              <div>
+                <label>slug</label>
+                <input id="selectedSlug" class="mono" readonly />
+              </div>
+              <div>
+                <label>X-API-Key</label>
+                <input id="selectedKey" class="mono" readonly />
+              </div>
+            </div>
+            <div style="margin-top: 12px" class="split">
+              <div>
+                <label>model</label>
+                <input id="selectedModel" class="mono" readonly />
+              </div>
+              <div>
+                <label>nome</label>
+                <input id="selectedName" readonly />
+              </div>
+            </div>
+
+            <div class="footerNote">
+              Se estiver usando Postgres via Docker, confirme que `DATABASE_URL` no `.env` aponta para
+              <span class="mono">localhost:5432</span>.
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 16px">
+        <header class="cardHeader">
+          <div>
+            <h2>Playground</h2>
+            <p>POST <span class="mono">/public/agent/{slug}</span> com header <span class="mono">X-API-Key</span></p>
+          </div>
+          <button class="btn primary" id="btnAsk" type="button">Perguntar</button>
+        </header>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label for="question">Pergunta</label>
+              <input id="question" placeholder="Ex: Quais são as políticas de reembolso?" />
+            </div>
+            <div>
+              <label for="overrideKey">X-API-Key (opcional override)</label>
+              <input id="overrideKey" class="mono" placeholder="Se vazio, usa o do agente selecionado" />
+            </div>
+          </div>
+
+          <div class="split">
+            <div>
+              <label>Resposta</label>
+              <div id="answer" class="result"></div>
+            </div>
+            <div>
+              <label>Sources</label>
+              <div id="sources" class="result mono"></div>
+            </div>
+          </div>
+
+          <div class="footerNote">
+            Por enquanto a resposta é um <strong>stub</strong> (ver `app/services/rag_service.py`). Quando você integrar
+            Chroma + OpenAI, o Playground já estará pronto.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      const base = window.location.origin;
+      $("baseUrl").textContent = base;
+
+      const setApiStatus = (ok) => {
+        const dot = $("apiDot");
+        const pill = $("apiStatus");
+        dot.classList.toggle("bad", !ok);
+        pill.title = ok ? "API ok" : "API offline";
+      };
+
+      async function request(path, opts = {}) {
+        const res = await fetch(path, opts);
+        const contentType = res.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+        const data = isJson ? await res.json() : await res.text();
+        if (!res.ok) {
+          const detail = typeof data === "string" ? data : data?.detail || JSON.stringify(data);
+          throw new Error(`${res.status} ${res.statusText} • ${detail}`);
+        }
+        return data;
+      }
+
+      function setResult(el, value, isError = false) {
+        el.textContent = value ?? "";
+        el.classList.toggle("error", Boolean(isError));
+      }
+
+      async function ping() {
+        try {
+          await request("/health");
+          setApiStatus(true);
+        } catch (e) {
+          setApiStatus(false);
+        }
+      }
+
+      async function refreshAgents(selectAgentId = null) {
+        const select = $("agentsSelect");
+        select.innerHTML = "";
+
+        const agents = await request("/agents");
+        if (!Array.isArray(agents) || agents.length === 0) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "Nenhum agente encontrado";
+          select.appendChild(opt);
+          $("selectedSlug").value = "";
+          $("selectedKey").value = "";
+          $("selectedModel").value = "";
+          $("selectedName").value = "";
+          return;
+        }
+
+        for (const a of agents) {
+          const opt = document.createElement("option");
+          opt.value = String(a.id);
+          opt.textContent = `#${a.id} • ${a.name} • ${a.slug} • ${a.model || "?"}`;
+          opt.dataset.slug = a.slug;
+          opt.dataset.key = a.api_key;
+          opt.dataset.model = a.model || "";
+          opt.dataset.name = a.name || "";
+          select.appendChild(opt);
+        }
+
+        if (selectAgentId) {
+          const idx = agents.findIndex((a) => String(a.id) === String(selectAgentId));
+          if (idx >= 0) select.selectedIndex = idx;
+        }
+
+        applySelectedAgent();
+      }
+
+      function applySelectedAgent() {
+        const select = $("agentsSelect");
+        const opt = select.selectedOptions?.[0];
+        $("selectedSlug").value = opt?.dataset?.slug || "";
+        $("selectedKey").value = opt?.dataset?.key || "";
+        $("selectedModel").value = opt?.dataset?.model || "";
+        $("selectedName").value = opt?.dataset?.name || "";
+      }
+
+      async function createAgent() {
+        const name = $("agentName").value.trim();
+        const prompt = $("agentPrompt").value.trim();
+        const slug = $("agentSlug").value.trim();
+        const model = $("agentModel").value;
+        const api_key = $("agentApiKey").value.trim();
+        const files = $("agentFiles").files;
+
+        if (!name) throw new Error("Nome do agente é obrigatório");
+
+        const payload = {
+          name,
+          slug: slug || null,
+          api_key: api_key || null,
+          model: model || null,
+          prompt: prompt || null,
+          user_id: null,
+        };
+
+        const agent = await request("/agents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (files && files.length) {
+          for (const f of files) {
+            const form = new FormData();
+            form.append("file", f, f.name);
+            await request(`/agents/${agent.id}/documents`, { method: "POST", body: form });
+          }
+        }
+
+        await refreshAgents(agent.id);
+        return agent;
+      }
+
+      async function ask() {
+        const slug = $("selectedSlug").value.trim();
+        const selectedKey = $("selectedKey").value.trim();
+        const key = ($("overrideKey").value || "").trim() || selectedKey;
+        const question = ($("question").value || "").trim();
+
+        if (!slug) throw new Error("Selecione um agente");
+        if (!key) throw new Error("X-API-Key não encontrado (crie/seleciona um agente)");
+        if (!question) throw new Error("Escreva uma pergunta");
+
+        const out = await request(`/public/agent/${encodeURIComponent(slug)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-API-Key": key },
+          body: JSON.stringify({ question }),
+        });
+
+        setResult($("answer"), out.answer || "");
+        setResult($("sources"), Array.isArray(out.sources) ? out.sources.join("\n") : "");
+      }
+
+      $("btnOpenDocs").addEventListener("click", () => {
+        window.open("/docs", "_blank", "noopener,noreferrer");
+      });
+
+      $("btnRefreshAgents").addEventListener("click", async () => {
+        try {
+          await refreshAgents();
+        } catch (e) {
+          alert(String(e.message || e));
+        }
+      });
+
+      $("agentsSelect").addEventListener("change", applySelectedAgent);
+
+      $("btnCreate").addEventListener("click", async () => {
+        try {
+          const agent = await createAgent();
+          alert(`Agente criado!\n\nid=${agent.id}\nslug=${agent.slug}\napi_key=${agent.api_key}`);
+        } catch (e) {
+          alert(String(e.message || e));
+        }
+      });
+
+      $("btnAsk").addEventListener("click", async () => {
+        try {
+          setResult($("answer"), "Carregando...");
+          setResult($("sources"), "");
+          await ask();
+        } catch (e) {
+          setResult($("answer"), String(e.message || e), true);
+          setResult($("sources"), "", false);
+        }
+      });
+
+      (async () => {
+        await ping();
+        try {
+          await refreshAgents();
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
+  </body>
+</html>
+

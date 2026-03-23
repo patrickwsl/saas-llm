@@ -39,10 +39,17 @@ class PublicService:
         else:
             rk = raw["rag_top_k"]
             rag_top_k = agent.rag_top_k if rk is None else int(rk)
+
+        if "prompt" not in raw:
+            prompt = agent.prompt
+        else:
+            p = raw["prompt"]
+            prompt = agent.prompt if p is None else p
+
         answer, sources = self.rag.answer_question(
             agent_id=agent.id,
             question=payload.question,
-            prompt=agent.prompt,
+            prompt=prompt,
             model=agent.model,
             temperature=temperature,
             top_p=top_p,

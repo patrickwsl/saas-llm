@@ -174,6 +174,19 @@
             <input id="question" placeholder="Ex: Quais são as políticas de reembolso?" />
           </div>
 
+          <div style="margin-top: 12px">
+            <label for="pgPrompt">Prompt do sistema (opcional)</label>
+            <textarea
+              id="pgPrompt"
+              class="playgroundPrompt"
+              placeholder="Vazio = usa o prompt salvo no agente. Preencha para testar outro comportamento sem salvar."
+            ></textarea>
+            <div class="helper">
+              Ao <strong>perguntar</strong>, vazio aqui usa o prompt salvo no agente. Ao <strong>salvar</strong>, vazio
+              remove o prompt armazenado (volta ao padrão do RAG na próxima gravação).
+            </div>
+          </div>
+
           <div style="margin-top: 14px">
             <label>Parâmetros ao vivo (cada pergunta envia estes valores)</label>
             <div class="inferenceGrid">

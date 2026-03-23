@@ -2,6 +2,9 @@ import { $ } from "./dom.js";
 import { request } from "./api.js";
 import { getAgentFileInput, resetStagedFiles } from "./files.js";
 
+/** @type {Map<string, string>} */
+const agentPromptById = new Map();
+
 export function setResult(el, value, isError = false) {
   el.textContent = value ?? "";
   el.classList.toggle("error", Boolean(isError));
@@ -12,6 +15,7 @@ function clearPlaygroundInference() {
   /** @type {HTMLInputElement} */ ($("pgTopP")).value = "1";
   /** @type {HTMLInputElement} */ ($("pgMaxTok")).value = "";
   /** @type {HTMLInputElement} */ ($("pgRagK")).value = "5";
+  /** @type {HTMLTextAreaElement} */ ($("pgPrompt")).value = "";
 }
 
 export async function refreshAgents(selectAgentId = null) {
@@ -28,11 +32,14 @@ export async function refreshAgents(selectAgentId = null) {
     /** @type {HTMLInputElement} */ ($("selectedKey")).value = "";
     /** @type {HTMLInputElement} */ ($("selectedModel")).value = "";
     /** @type {HTMLInputElement} */ ($("selectedName")).value = "";
+    agentPromptById.clear();
     clearPlaygroundInference();
     return;
   }
 
+  agentPromptById.clear();
   for (const a of agents) {
+    agentPromptById.set(String(a.id), a.prompt ?? "");
     const opt = document.createElement("option");
     opt.value = String(a.id);
     opt.textContent = `#${a.id} • ${a.name} • ${a.slug} • ${a.model || "?"}`;
@@ -70,6 +77,8 @@ export function applySelectedAgent() {
   /** @type {HTMLInputElement} */ ($("pgTopP")).value = opt.dataset.topP || "1";
   /** @type {HTMLInputElement} */ ($("pgRagK")).value = opt.dataset.ragTopK || "5";
   /** @type {HTMLInputElement} */ ($("pgMaxTok")).value = opt.dataset.maxTokens || "";
+  const id = opt.value;
+  /** @type {HTMLTextAreaElement} */ ($("pgPrompt")).value = agentPromptById.get(id) ?? "";
 }
 
 function readCreateInferencePayload() {
@@ -99,7 +108,9 @@ export function readPlaygroundInferenceBody() {
   if (mt !== "" && Number.isNaN(max_tokens)) {
     throw new Error("Max tokens inválido");
   }
-  return { temperature, top_p, rag_top_k, max_tokens };
+  const promptRaw = /** @type {HTMLTextAreaElement} */ ($("pgPrompt")).value.trim();
+  const prompt = promptRaw === "" ? null : promptRaw;
+  return { temperature, top_p, rag_top_k, max_tokens, prompt };
 }
 
 export async function createAgent() {
@@ -152,6 +163,7 @@ export async function saveAgentConfig() {
     body: JSON.stringify(inf),
   });
 
+  agentPromptById.set(String(agent.id), agent.prompt ?? "");
   const opt = select.selectedOptions?.[0];
   if (opt) {
     opt.dataset.temperature = String(agent.temperature);

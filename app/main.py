@@ -32,12 +32,32 @@ def _ensure_schema() -> None:
                     "ADD COLUMN IF NOT EXISTS model VARCHAR(64) NOT NULL DEFAULT 'gpt-4o-mini'"
                 )
             )
+            conn.execute(
+                text(
+                    "ALTER TABLE agents "
+                    "ADD COLUMN IF NOT EXISTS temperature DOUBLE PRECISION NOT NULL DEFAULT 0.7"
+                )
+            )
+            conn.execute(
+                text("ALTER TABLE agents ADD COLUMN IF NOT EXISTS top_p DOUBLE PRECISION NOT NULL DEFAULT 1.0")
+            )
+            conn.execute(text("ALTER TABLE agents ADD COLUMN IF NOT EXISTS max_tokens INTEGER"))
+            conn.execute(
+                text("ALTER TABLE agents ADD COLUMN IF NOT EXISTS rag_top_k INTEGER NOT NULL DEFAULT 5")
+            )
         elif dialect == "sqlite":
             # SQLite pode falhar quando a coluna já existe; nesse caso a operação é ignorada.
-            try:
-                conn.execute(text("ALTER TABLE agents ADD COLUMN model VARCHAR(64) DEFAULT 'gpt-4o-mini'"))
-            except Exception:
-                pass
+            for stmt in (
+                "ALTER TABLE agents ADD COLUMN model VARCHAR(64) DEFAULT 'gpt-4o-mini'",
+                "ALTER TABLE agents ADD COLUMN temperature REAL DEFAULT 0.7",
+                "ALTER TABLE agents ADD COLUMN top_p REAL DEFAULT 1.0",
+                "ALTER TABLE agents ADD COLUMN max_tokens INTEGER",
+                "ALTER TABLE agents ADD COLUMN rag_top_k INTEGER DEFAULT 5",
+            ):
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
 
 
 @app.get("/health")

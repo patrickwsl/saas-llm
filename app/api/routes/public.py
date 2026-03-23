@@ -17,5 +17,5 @@ def ask_public_agent(
     """Endpoint público para consultar um agente por slug."""
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing X-API-Key header")
-    return service.answer(slug=slug, api_key=x_api_key, question=payload.question)
+    return service.answer(slug=slug, api_key=x_api_key, payload=payload)
 

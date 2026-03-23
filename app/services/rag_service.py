@@ -15,7 +15,7 @@ class RagService:
             raise HTTPException(status_code=500, detail="OPENAI_API_KEY não configurada")
         self._client = OpenAI(api_key=settings.openai_api_key)
         self._embedder = EmbeddingService()
-        self._model = settings.openai_model
+        self._default_model = settings.openai_model
 
     def _get_collection(self, agent_id: int):
         """Obtém a coleção vetorial isolada por agente."""
@@ -25,7 +25,18 @@ class RagService:
         name = f"agent_{agent_id}"
         return client.get_or_create_collection(name=name)
 
-    def answer_question(self, agent_id: int, question: str, *, prompt: str | None = None) -> Tuple[str, List[str]]:
+    def answer_question(
+        self,
+        agent_id: int,
+        question: str,
+        *,
+        prompt: str | None = None,
+        model: str | None = None,
+        temperature: float = 0.7,
+        top_p: float = 1.0,
+        max_tokens: int | None = None,
+        rag_top_k: int = 5,
+    ) -> Tuple[str, List[str]]:
         """Gera resposta baseada em contexto recuperado da base vetorial."""
         if not question.strip():
             raise HTTPException(status_code=400, detail="Pergunta vazia")
@@ -33,7 +44,8 @@ class RagService:
         collection = self._get_collection(agent_id)
 
         q_embed = self._embedder.embed_texts([question])[0]
-        results = collection.query(query_embeddings=[q_embed], n_results=5)
+        n_results = max(1, min(rag_top_k, 50))
+        results = collection.query(query_embeddings=[q_embed], n_results=n_results)
 
         docs: List[str] = []
         sources: List[str] = []
@@ -52,16 +64,22 @@ class RagService:
             "Se não encontrar a resposta no contexto, diga que não sabe em vez de inventar."
         )
 
-        completion = self._client.chat.completions.create(
-            model=self._model,
-            messages=[
+        chat_model = (model or "").strip() or self._default_model
+        kwargs: dict = {
+            "model": chat_model,
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {
                     "role": "user",
                     "content": f"Contexto:\n{context}\n\nPergunta do usuário: {question}",
                 },
             ],
-        )
+            "temperature": temperature,
+            "top_p": top_p,
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        completion = self._client.chat.completions.create(**kwargs)
 
         answer = completion.choices[0].message.content or ""
         return answer.strip(), sources

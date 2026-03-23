@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas.agent import AgentCreate, AgentOut
+from app.schemas.agent import AgentCreate, AgentOut, AgentUpdate
 from app.services.agent_service import AgentService
 
 
@@ -17,4 +17,10 @@ def create_agent(payload: AgentCreate, service: AgentService = Depends()):
 def list_agents(service: AgentService = Depends()):
     """Lista todos os agentes cadastrados."""
     return service.list_agents()
+
+
+@router.patch("/{agent_id}", response_model=AgentOut)
+def update_agent(agent_id: int, payload: AgentUpdate, service: AgentService = Depends()):
+    """Atualiza configuração do agente (ex.: parâmetros salvos pelo playground)."""
+    return service.update_agent(agent_id, payload)
 

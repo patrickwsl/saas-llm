@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.security import generate_api_key
 from app.db.session import get_db
 from app.models.agent import Agent
-from app.schemas.agent import AgentCreate
+from app.schemas.agent import AgentCreate, AgentUpdate
 from app.services.utils import slugify
 
 
@@ -16,7 +16,7 @@ class AgentService:
         self.db = db
 
     def create_agent(self, payload: AgentCreate) -> Agent:
-        """Cria agente garantindo slug único e geração de API key quando ausente."""
+        """Cria agente garantindo slug único e API key gerada no servidor."""
         base_slug = slugify(payload.slug) if payload.slug else slugify(payload.name)
         slug = base_slug
         i = 2
@@ -27,10 +27,14 @@ class AgentService:
         agent = Agent(
             name=payload.name,
             slug=slug,
-            api_key=(payload.api_key.strip() if payload.api_key and payload.api_key.strip() else generate_api_key()),
+            api_key=generate_api_key(),
             model=(payload.model.strip() if payload.model and payload.model.strip() else "gpt-4o-mini"),
             prompt=payload.prompt,
             user_id=payload.user_id,
+            temperature=payload.temperature,
+            top_p=payload.top_p,
+            max_tokens=payload.max_tokens,
+            rag_top_k=payload.rag_top_k,
         )
         self.db.add(agent)
         self.db.commit()
@@ -44,6 +48,32 @@ class AgentService:
     def get_agent_by_slug(self, slug: str) -> Agent | None:
         """Busca agente por slug único."""
         return self.db.scalar(select(Agent).where(Agent.slug == slug))
+
+    def get_agent(self, agent_id: int) -> Agent:
+        """Retorna agente por id ou 404."""
+        agent = self.db.scalar(select(Agent).where(Agent.id == agent_id))
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        return agent
+
+    def update_agent(self, agent_id: int, payload: AgentUpdate) -> Agent:
+        """Aplica apenas campos informados no payload."""
+        agent = self.get_agent(agent_id)
+        data = payload.model_dump(exclude_unset=True)
+        if "api_key" in data and data["api_key"] is not None:
+            data["api_key"] = data["api_key"].strip()
+            if not data["api_key"]:
+                del data["api_key"]
+        if "model" in data and data["model"] is not None:
+            data["model"] = data["model"].strip()
+            if not data["model"]:
+                del data["model"]
+        for key, value in data.items():
+            setattr(agent, key, value)
+        self.db.add(agent)
+        self.db.commit()
+        self.db.refresh(agent)
+        return agent
 
     def get_agent_by_slug_and_key(self, slug: str, api_key: str) -> Agent:
         """Valida acesso público do agente por slug + API key."""

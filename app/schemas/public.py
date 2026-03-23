@@ -1,10 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PublicQuestionIn(BaseModel):
-    """Pergunta enviada ao endpoint público do agente."""
+    """Pergunta ao endpoint público; campos opcionais sobrescrevem o perfil do agente."""
 
     question: str
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, ge=0.0, le=1.0)
+    max_tokens: int | None = Field(default=None, ge=1, le=128000)
+    rag_top_k: int | None = Field(default=None, ge=1, le=50)
 
 
 class PublicAnswerOut(BaseModel):
@@ -12,4 +16,3 @@ class PublicAnswerOut(BaseModel):
 
     answer: str
     sources: list[str] = []
-

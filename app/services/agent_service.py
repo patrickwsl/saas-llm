@@ -2,11 +2,14 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config.logger import get_logger
 from app.core.security import generate_api_key
 from app.db.session import get_db
 from app.models.agent import Agent
 from app.schemas.agent import AgentCreate, AgentUpdate
 from app.services.utils import slugify
+
+log = get_logger(__name__)
 
 
 class AgentService:
@@ -39,6 +42,10 @@ class AgentService:
         self.db.add(agent)
         self.db.commit()
         self.db.refresh(agent)
+        log.info(
+            "agente criado",
+            extra={"agent_id": agent.id, "slug": agent.slug, "agent_name": agent.name},
+        )
         return agent
 
     def list_agents(self) -> list[Agent]:
@@ -53,6 +60,7 @@ class AgentService:
         """Retorna agente por id ou 404."""
         agent = self.db.scalar(select(Agent).where(Agent.id == agent_id))
         if not agent:
+            log.warning("agente não encontrado", extra={"agent_id": agent_id})
             raise HTTPException(status_code=404, detail="Agent not found")
         return agent
 
@@ -73,14 +81,20 @@ class AgentService:
         self.db.add(agent)
         self.db.commit()
         self.db.refresh(agent)
+        log.info("agente atualizado", extra={"agent_id": agent.id, "slug": agent.slug})
         return agent
 
     def get_agent_by_slug_and_key(self, slug: str, api_key: str) -> Agent:
         """Valida acesso público do agente por slug + API key."""
         agent = self.db.scalar(select(Agent).where(Agent.slug == slug))
         if not agent:
+            log.warning("acesso público: slug desconhecido", extra={"slug": slug})
             raise HTTPException(status_code=404, detail="Agent not found")
         if agent.api_key != api_key:
+            log.warning(
+                "acesso público: API key inválida",
+                extra={"slug": slug, "agent_id": agent.id},
+            )
             raise HTTPException(status_code=403, detail="Invalid API key")
         return agent
 

@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     env: str = "local"
+    service_name: str = "saas-llm"
+    log_level: str = "INFO"
+    log_format: str = "console"
     database_url: str | None = None
     app_secret_key: str = "change-me"
     openai_api_key: str | None = None

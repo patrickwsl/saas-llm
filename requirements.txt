@@ -8,3 +8,4 @@ passlib[bcrypt]
 python-multipart
 openai
 chromadb
+pypdf

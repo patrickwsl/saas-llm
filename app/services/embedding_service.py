@@ -2,7 +2,10 @@ from typing import Iterable, List
 
 from openai import OpenAI
 
+from app.config.logger import get_logger
 from app.core.config import settings
+
+log = get_logger(__name__)
 
 
 class EmbeddingService:
@@ -19,6 +22,10 @@ class EmbeddingService:
         texts = [t or "" for t in texts]
         if not texts:
             return []
+        log.info(
+            "embeddings solicitados",
+            extra={"batch_size": len(texts), "model": self._model},
+        )
         resp = self._client.embeddings.create(model=self._model, input=texts)
         return [d.embedding for d in resp.data]
 

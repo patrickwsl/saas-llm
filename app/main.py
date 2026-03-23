@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
+from app.config.logger import configure_logging
 from app.api.routes.agents import router as agents_router
 from app.api.routes.documents import router as documents_router
 from app.api.routes.public import router as public_router
@@ -17,6 +18,7 @@ app = FastAPI(title="saas-llm backend (RAG MVP)")
 @app.on_event("startup")
 def on_startup():
     """Inicializa esquema relacional e ajustes de compatibilidade do banco."""
+    configure_logging()
     Base.metadata.create_all(bind=engine)
     _ensure_schema()
 

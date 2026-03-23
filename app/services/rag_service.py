@@ -3,8 +3,11 @@ from typing import List, Tuple
 from fastapi import HTTPException
 from openai import OpenAI
 
+from app.config.logger import get_logger
 from app.core.config import settings
 from app.services.embedding_service import EmbeddingService
+
+log = get_logger(__name__)
 
 
 class RagService:
@@ -38,12 +41,14 @@ class RagService:
         rag_top_k: int = 5,
     ) -> Tuple[str, List[str]]:
         """Gera resposta baseada em contexto recuperado da base vetorial."""
-        if not question.strip():
+        q = question.strip()
+        if not q:
+            log.warning("rag: pergunta vazia rejeitada", extra={"agent_id": agent_id})
             raise HTTPException(status_code=400, detail="Pergunta vazia")
 
         collection = self._get_collection(agent_id)
 
-        q_embed = self._embedder.embed_texts([question])[0]
+        q_embed = self._embedder.embed_texts([q])[0]
         n_results = max(1, min(rag_top_k, 50))
         results = collection.query(query_embeddings=[q_embed], n_results=n_results)
 
@@ -55,6 +60,16 @@ class RagService:
             docs = [str(d) for d in docs_raw]
             filenames = {m.get("filename") for m in metas if isinstance(m, dict) and m.get("filename")}
             sources = sorted(filenames)
+
+        log.info(
+            "rag: busca vetorial concluída",
+            extra={
+                "agent_id": agent_id,
+                "rag_top_k": n_results,
+                "chunk_hits": len(docs),
+                "distinct_sources": len(sources),
+            },
+        )
 
         context = "\n\n".join(docs) if docs else "Nenhum contexto relevante encontrado na base de conhecimento."
 
@@ -71,7 +86,7 @@ class RagService:
                 {"role": "system", "content": system_prompt},
                 {
                     "role": "user",
-                    "content": f"Contexto:\n{context}\n\nPergunta do usuário: {question}",
+                    "content": f"Contexto:\n{context}\n\nPergunta do usuário: {q}",
                 },
             ],
             "temperature": temperature,
@@ -82,5 +97,15 @@ class RagService:
         completion = self._client.chat.completions.create(**kwargs)
 
         answer = completion.choices[0].message.content or ""
-        return answer.strip(), sources
+        out = answer.strip()
+        log.info(
+            "rag: resposta do modelo recebida",
+            extra={
+                "agent_id": agent_id,
+                "model": chat_model,
+                "answer_chars": len(out),
+                "source_count": len(sources),
+            },
+        )
+        return out, sources
 
